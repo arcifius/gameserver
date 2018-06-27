@@ -14,24 +14,29 @@ defmodule Gameserver.Bootstrap do
 
     # Opening the socket
     IO.puts("Initializing server on localhost:#{port}")
-    server = Socket.UDP.open!(port)
+    server = Socket.TCP.listen!(port, packet: :line)
 
     # Wait for messages
-    spawn(fn -> listen(server) end)
+    spawn(fn ->
+      accept(server)
+    end)
   end
 
   defp initState() do
     Gameserver.State.Players.create()
   end
 
-  defp listen(server) do
-    # Waiting for messages
-    {data, client} = server |> Socket.Datagram.recv!()
+  defp accept(server) do
+    # Waiting for players
+    client = server |> Socket.accept!()
 
     # When messages arrive we will dispatch another process to handle them
-    spawn(fn -> Gameserver.Network.Message.handle(data, client) end)
+    spawn(fn ->
+      client |> Socket.Stream.send!(client |> Socket.Stream.recv!)
+      client |> Socket.Stream.close
+    end)
 
     # Waits for messages again
-    listen(server)
+    accept(server)
   end
 end
