@@ -1,4 +1,6 @@
 defmodule Gameserver.Bootstrap do
+  require Logger
+
   @moduledoc """
   Bootstrap module will setup everything and startup.
   """
@@ -8,35 +10,36 @@ defmodule Gameserver.Bootstrap do
   @doc """
   Initializes server on the provided `port` and configure initial state
   """
-  def init(port \\ @server["port"]) do
+  def init(port \\ @server.port) do
     # Initializing state
     initState()
 
     # Opening the socket
     IO.puts("Initializing server on localhost:#{port}")
-    server = Socket.TCP.listen!(port, packet: :line)
 
-    # Wait for messages
-    spawn(fn ->
-      accept(server)
-    end)
+    case :gen_tcp.listen(port, [:binary, active: true, reuseaddr: true]) do
+      {:ok, socket} ->
+        Logger.info("Waiting for players")
+        accept_connection(socket)
+
+      {:error, reason} ->
+        Logger.error("Could not initialize server: #{reason}")
+    end
   end
 
   defp initState() do
     Gameserver.State.Players.create()
   end
 
-  defp accept(server) do
+  defp accept_connection(server) do
     # Waiting for players
-    client = server |> Socket.accept!()
+    {:ok, client} = :gen_tcp.accept(server)
 
-    # When messages arrive we will dispatch another process to handle them
-    spawn(fn ->
-      client |> Socket.Stream.send!(client |> Socket.Stream.recv!)
-      client |> Socket.Stream.close
-    end)
+    # When a new player arrives we will dispatch a process to attend him
+    pid = spawn(fn -> Gameserver.Network.Player.wait() end)
+    :gen_tcp.controlling_process(client, pid)
 
-    # Waits for messages again
-    accept(server)
+    # Back to waiting for players
+    accept_connection(server)
   end
 end
