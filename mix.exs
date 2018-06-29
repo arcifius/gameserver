@@ -14,16 +14,16 @@ defmodule Gameserver.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :ranch],
+      mod: {Gameserver, []}
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:socket, "~> 0.3"},
       {:message_pack, "~> 0.2.0"},
-      {:poison, "~> 3.1"}
+      {:ranch, "~> 1.5.0"}
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
     ]
   end

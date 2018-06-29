@@ -9,8 +9,8 @@ defmodule Gameserver.State.Players do
     `{:ok, pid}` when sucessfully created.
     `{:error, reason}` when something went wrong.
   """
-  def create(players_list \\ []) do
-    GenServer.start(__MODULE__, players_list, name: :players)
+  def start_link(players_list \\ []) do
+    GenServer.start_link(__MODULE__, players_list, name: :players)
   end
 
   @doc """

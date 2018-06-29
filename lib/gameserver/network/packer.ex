@@ -1,16 +1,6 @@
-defmodule Gameserver.Network.Message do
+defmodule Gameserver.Network.Packer do
   alias Gameserver.Structs
   alias Gameserver.Utils
-
-  def read_header(packet) do
-    <<header::size(16), _data::binary>> = packet
-    header
-  end
-
-  def read_payload(packet, payload_size) do
-    <<_header::size(16), data::size(payload_size)-bytes>> = packet
-    data
-  end
 
   def deserialize(packet) do
     with {:ok, data} <- MessagePack.unpack(packet) do
